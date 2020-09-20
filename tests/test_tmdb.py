@@ -1,5 +1,8 @@
+from main import app
 import tmdb_client
 from unittest.mock import Mock
+import pytest
+from tmdb_client import call_tmbd_api
 
 #PYTHONPATH=. pytest
 
@@ -57,3 +60,19 @@ def test_get_single_movie_cast():
    mock_movie_cast = ['cast1', 'cast2']
    cast = tmdb_client.get_single_movie_cast(100)
    assert type(cast) == type(mock_movie_cast)
+
+@pytest.mark.parametrize("test_input,expected",
+                         [('movie/now_playing', 'movie/now_playing'),
+                          ('movie/popular', 'movie/popular'),
+                          ('movie/top_rated', 'movie/top_rated'),
+                          ('movie/upcoming','movie/upcoming')])
+
+def test_homepage(monkeypatch,test_input,expected):
+   api_mock = Mock(return_value={'results': []})
+   monkeypatch.setattr(tmdb_client,"call_tmbd_api(test_input)", api_mock)
+
+   with app.test_client() as client:
+       response = client.get('/')
+       assert response.status_code == 200
+       api_mock.assert_called_once_with(expected)
+

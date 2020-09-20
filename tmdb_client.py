@@ -1,7 +1,7 @@
 import requests
 import random
 import my_token
-from http import HTTPStatus
+
 
 def call_tmbd_api(endpoint):
     full_url = f"https://api.themoviedb.org/3/{endpoint}"
