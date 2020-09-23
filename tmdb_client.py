@@ -17,7 +17,8 @@ def get_movies_list(list_type='popular'):
     available_lists = ['now_playing', 'popular', 'top_rated', 'upcoming']
     if list_type not in available_lists:
         list_type = 'popular'
-    return call_tmbd_api(f'movie/{list_type}')
+    result = call_tmbd_api(f'movie/{list_type}')
+    return result
 
 
 def get_single_movie(movie_id):

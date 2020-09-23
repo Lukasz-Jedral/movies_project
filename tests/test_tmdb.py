@@ -2,9 +2,8 @@ from main import app
 import tmdb_client
 from unittest.mock import Mock
 import pytest
-from tmdb_client import call_tmbd_api
-
-#PYTHONPATH=. pytest
+import requests
+from functools import partial
 
 def test_get_poster_url_uses_default_size():
    # Przygotowanie danych
@@ -61,18 +60,35 @@ def test_get_single_movie_cast():
    cast = tmdb_client.get_single_movie_cast(100)
    assert type(cast) == type(mock_movie_cast)
 
-@pytest.mark.parametrize("test_input,expected",
-                         [('movie/now_playing', 'movie/now_playing'),
-                          ('movie/popular', 'movie/popular'),
-                          ('movie/top_rated', 'movie/top_rated'),
-                          ('movie/upcoming','movie/upcoming')])
 
-def test_homepage(monkeypatch,test_input,expected):
-   api_mock = Mock(return_value={'results': []})
-   monkeypatch.setattr(tmdb_client,"call_tmbd_api(test_input)", api_mock)
+@pytest.mark.parametrize("test_input,expected",
+                         [('now_playing', 200),
+                          ('popular', 200),
+                          ('top_rated', 200),
+                          ('upcoming', 200)])
+
+def test_homepage(monkeypatch, test_input, expected):
+   mock_result = ['Movie_1', 'Movie2', 'Movie3', 'Movie4', 'Movie5', 'Movie6', 'Movie7', 'Movie8', 'Movie9'] #{'results': [],'cast': []}
+   api_mock = Mock()
+   response = api_mock.return_value
+   response.json.return_value = mock_result
+   monkeypatch.setattr(requests, "get", api_mock)
 
    with app.test_client() as client:
-       response = client.get('/')
-       assert response.status_code == 200
-       api_mock.assert_called_once_with(expected)
+      r = client.get('/', query_string={'list_type': f'{test_input}'})
+      assert r.status_code == 200
+      api_mock.assert_called_once_with(test_input)
 
+ # Lista, którą będzie zwracać przysłonięte "zapytanie do API"
+   mock_movies_list = ['Movie 1', 'Movie 2']
+
+   requests_mock = Mock()
+   # Wynik wywołania zapytania do API
+   response = requests_mock.return_value
+   # Przysłaniamy wynik wywołania metody .json()
+   response.json.return_value = mock_movies_list
+   monkeypatch.setattr('tmdb_client.requests.get', requests_mock)
+
+
+   movies_list = tmdb_client.get_movies_list(list_type="popular")
+   assert movies_list == mock_movies_list
